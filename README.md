@@ -1,3 +1,6 @@
+### Demo
+<https://fourcinnamon0.github.io/bfvis/>
+### Info
 This is supposed to be a fork of <https://github.com/fatiherikli/brainfuck-visualizer/>.
 ### Brainfuck Visualizer
 
@@ -24,5 +27,3 @@ More information:
 - Dwillie ([dwille](https://github.com/dwillie))
 - Eugene Sharygin ([eush77](https://github.com/eush77))
 
-### Demo
-<https://fourcinnamon0.github.io/bfvis/>
