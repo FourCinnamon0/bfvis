@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BF Visualiser</title>
+    <meta name="description" content="Brainfuck Interpreter and Visualizer." />
+    <link rel="stylesheet" href="css/screen.css" />
+    <script type="text/javascript" src="js/inser.js"></script>
+    <script type="text/javascript" src="js/lib/jquery-1.9.1.js"></script>
+<script type="text/javascript" src="js/lib/underscore-min.js"></script>
+<script type="text/javascript" src="js/lib/backbone-min.js"></script>
+</head>
+<body>
+<noscript>If you don't have JavaScript this has exactly 0 (zero) chance of working</noscript>
+
+    <div id="interpreter">
+        <section class="machine">
+            <ul class="tape">
+            </ul>
+            <div class="pointer"><em></em></div>
+        </section>
+        <section class="editor">
+            <div class="actions">
+                <a class="button" href="#" id="run">Run</a>
+                <a class="button" href="#" id="first-step">Step</a>
+                <a class="button hidden" href="#" id="stop">Stop</a>
+                <a class="button hidden" href="#" id="step">Step</a>
+                <a class="button hidden" href="#" id="pause">Pause</a>
+                <a class="button hidden" href="#" id="continue">Continue</a> 
+                <input type="number" id="inser" class="insty" min="-256" max="256" onkeyup="insvalupd()"><input id="inserch" class="insty" maxlength="2" onkeydown="clear()" onkeyup="insvu()" type="text">
+                <div id="insout" class="button" onclick="clipboard()">Copy</div>
+                <div id="ot" class="button fr" title="Settings">index.bf</div>
+                <div id="delay-box">
+                    <label for="delay">Delay: <span id="delshow">50</span></label>
+                    <input id="delay" value="50" type="range" step="1" min="0" max="500" oninput="updatedelshow();"/>
+                </div>
+                <div id="bits-box">
+                    <label for="bits">Bits: <span for="bits" id="bitshow">8</span><span id="uns" class="hidden">*</span></label>
+                    <input id="bits" value="50" type="range" step="1" min="1" max="16" oninput="updatebitshow();"/>
+                </div>
+                <div id="optimize-box">
+                    <label for="optimize">Optimize?</label>
+                    <input id="optimize" type="checkbox"/>
+                </div>
+                <div id="exclaim-box">
+                    <label for="exclaim">!</label>
+                    <input id="exclaim" type="checkbox"/>
+                </div>
+                
+                <div id="input-box">
+                    <label>Waiting for input</label>
+                    <input type="text" id="input" maxlength="1"/>
+                </div>
+            </div>
+            
+
+<div id="modal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    
+    <span class="close">&times;</span>
+    
+                <div class="button fri" onclick="downloadbf()">Download code</div>
+                <input type="text" class='inputs' id="dfinput" placeholder="Filename...">
+                <input id="input-file" type="file" accept=".bf, .b, .txt" /><br><br>
+                <div class="button" onclick="minify()">Minify</div><div class="button fri" onclick="beautify()">Beautify</div><br>
+                
+  <br></div>
+
+</div>
+            <div id="preview" style="overflow:hidden"></div>
+			<textarea id="source" style="overflow:hidden">+++++ +++++             initialize counter (cell #0) to 10
+[                       use loop to set 70/100/30/10
+    > +++++ ++              add  7 to cell #1
+    > +++++ +++++           add 10 to cell #2
+    > +++                   add  3 to cell #3
+    > +                     add  1 to cell #4
+<<<< -                  decrement counter (cell #0)
+]
+> ++ .                  print 'H'
+> + .                   print 'e'
++++++ ++ .              print 'l'
+.                       print 'l'
++++ .                   print 'o'
+> ++ .                  print ' '
+<< +++++ +++++ +++++ .  print 'W'
+> .                     print 'o'
++++ .                   print 'r'
+----- - .               print 'l'
+----- --- .             print 'd'
+> + .                   print '!'
+> .                     print '\n'</textarea>
+        <h3>Output</h3>
+        <pre id="output"></pre>
+        </section>
+    </div>
+    <section id="info">
+        
+        <h3>Quick Reference</h3>
+        <table>
+            <tbody>
+            <tr>
+                <td style="text-align:center"><code>&gt;</code></td>
+                <td>increment the data pointer (to point to the next cell to the right).</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>&lt;</code></td>
+                <td>decrement the data pointer (to point to the next cell to the left).</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>+</code></td>
+                <td>increment (increase by one) the byte at the data pointer.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>-</code></td>
+                <td>decrement (decrease by one) the byte at the data pointer.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>.</code></td>
+                <td>output the byte at the data pointer.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>,</code></td>
+                <td>accept one byte of input, storing its value in the byte at the data pointer.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>[</code></td>
+                <td>if the byte at the data pointer is zero, then instead of moving the <a href="/wiki/Program_Counter" title="Program Counter" class="mw-redirect">instruction pointer</a> forward to the next command, <a href="/wiki/Branch_(computer_science)" title="Branch (computer science)">jump</a> it <i>forward</i> to the command after the <i>matching</i> <code>]</code> command.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>]</code></td>
+                <td>if the byte at the data pointer is nonzero, then instead of moving the instruction pointer forward to the next command, jump it <i>back</i> to the command after the <i>matching</i> <code>[</code> command.</td>
+            </tr>
+            <tr>
+                <td style="text-align:center"><code>!</code></td>
+		<td>if the exclaim box is checked, allows the interpreter to use all characters to the right of the <code>!</code> as program input.</td>
+            </tr>
+            </tbody></table>
+            
+        <p><a href="http://en.wikipedia.org/wiki/Brainfuck">http://en.wikipedia.org/wiki/Brainfuck</a></p>
+        <div class="button" onclick="document.getElementById('tbl').classList.toggle('hidden');">Show Ascii Table</div><br><br>
+    </section>
+<br>
+
+<div id="tbl" class="hidden"><div><p>The first 32 characters in the ASCII-table are unprintable control codes and are used to control peripherals such as printers.</p><p>Codes 32-127 are common for all the different variations of the ASCII table, they are called printable characters, represent letters, digits, punctuation marks, and a few miscellaneous symbols. Character 127 represents the command DEL.</p><input type="text" id="search" onkeyup="filter()" placeholder="Search ASCII table"></div><br><table><thead><tr><th onclick="wh = 0;filter();">DEC</th><th onclick="wh = 1;filter();">Symbol</th><th onclick="wh = 2;filter();">Description</th></tr></thead><tbody><tr><td>0</td><td>NUL</td><td>Null char</td></tr><tr><td>1</td><td>SOH</td><td>Start of Heading</td></tr><tr><td>2</td><td>STX</td><td>Start of Text</td></tr><tr><td>3</td><td>ETX</td><td>End of Text</td></tr><tr><td>4</td><td>EOT</td><td>End of Transmission</td></tr><tr><td>5</td><td>ENQ</td><td>Enquiry</td></tr><tr><td>6</td><td>ACK</td><td>Acknowledgment</td></tr><tr><td>7</td><td>BEL</td><td>Bell</td></tr><tr><td>8</td><td>BS</td><td>Back Space</td></tr><tr><td>9</td><td>HT</td><td>Horizontal Tab</td></tr><tr><td>10</td><td>LF</td><td>Line Feed</td></tr><tr><td>11</td><td>VT</td><td>Vertical Tab</td></tr><tr><td>12</td><td>FF</td><td>Form Feed</td></tr><tr><td>13</td><td>CR</td><td>Carriage Return</td></tr><tr><td>14</td><td>SO</td><td>Shift Out / X-On</td></tr><tr><td>15</td><td>SI</td><td>Shift In / X-Off</td></tr><tr><td>16</td><td>DLE</td><td>Data Line Escape</td></tr><tr><td>17</td><td>DC1</td><td>Device Control 1 (oft. XON)</td></tr><tr><td>18</td><td>DC2</td><td>Device Control 2</td></tr><tr><td>19</td><td>DC3</td><td>Device Control 3 (oft. XOFF)</td></tr><tr><td>20</td><td>DC4</td><td>Device Control 4</td></tr><tr><td>21</td><td>NAK</td><td>Negative Acknowledgement</td></tr><tr><td>22</td><td>SYN</td><td>Synchronous Idle</td></tr><tr><td>23</td><td>ETB</td><td>End of Transmit Block</td></tr><tr><td>24</td><td>CAN</td><td>Cancel</td></tr><tr><td>25</td><td>EM</td><td>End of Medium</td></tr><tr><td>26</td><td>SUB</td><td>Substitute</td></tr><tr><td>27</td><td>ESC</td><td>Escape</td></tr><tr><td>28</td><td>FS</td><td>File Separator</td></tr><tr><td>29</td><td>GS</td><td>Group Separator</td></tr><tr><td>30</td><td>RS</td><td>Record Separator</td></tr><tr><td>31</td><td>US</td><td>Unit Separator</td></tr><tr><td>32</td><td> </td><td>Space</td></tr><tr><td>33</td><td>!</td><td>Exclamation mark</td></tr><tr><td>34</td><td>"</td><td>Double quotes (or speech marks)</td></tr><tr><td>35</td><td>#</td><td>Number</td></tr><tr><td>36</td><td>$</td><td>Dollar</td></tr><tr><td>37</td><td>%</td><td>Per cent sign</td></tr><tr><td>38</td><td>&amp;</td><td>Ampersand</td></tr><tr><td>39</td><td>'</td><td>Single quote</td></tr><tr><td>40</td><td>(</td><td>Open parenthesis (or open bracket)</td></tr><tr><td>41</td><td>)</td><td>Close parenthesis (or close bracket)</td></tr><tr><td>42</td><td>*</td><td>Asterisk</td></tr><tr><td>43</td><td>+</td><td>Plus</td></tr><tr><td>44</td><td>,</td><td>Comma</td></tr><tr><td>45</td><td>-</td><td>Hyphen</td></tr><tr><td>46</td><td>.</td><td>Period, dot or full stop</td></tr><tr><td>47</td><td>/</td><td>Slash or divide</td></tr><tr><td>48</td><td>0</td><td>Zero</td></tr><tr><td>49</td><td>1</td><td>One</td></tr><tr><td>50</td><td>2</td><td>Two</td></tr><tr><td>51</td><td>3</td><td>Three</td></tr><tr><td>52</td><td>4</td><td>Four</td></tr><tr><td>53</td><td>5</td><td>Five</td></tr><tr><td>54</td><td>6</td><td>Six</td></tr><tr><td>55</td><td>7</td><td>Seven</td></tr><tr><td>56</td><td>8</td><td>Eight</td></tr><tr><td>57</td><td>9</td><td>Nine</td></tr><tr><td>58</td><td>:</td><td>Colon</td></tr><tr><td>59</td><td>;</td><td>Semicolon</td></tr><tr><td>60</td><td>&lt;</td><td>Less than (or open angled bracket)</td></tr><tr><td>61</td><td>=</td><td>Equals</td></tr><tr><td>62</td><td>&gt;</td><td>Greater than (or close angled bracket)</td></tr><tr><td>63</td><td>?</td><td>Question mark</td></tr><tr><td>64</td><td>@</td><td>At symbol</td></tr><tr><td>65</td><td>A</td><td>Uppercase A</td></tr><tr><td>66</td><td>B</td><td>Uppercase B</td></tr><tr><td>67</td><td>C</td><td>Uppercase C</td></tr><tr><td>68</td><td>D</td><td>Uppercase D</td></tr><tr><td>69</td><td>E</td><td>Uppercase E</td></tr><tr><td>70</td><td>F</td><td>Uppercase F</td></tr><tr><td>71</td><td>G</td><td>Uppercase G</td></tr><tr><td>72</td><td>H</td><td>Uppercase H</td></tr><tr><td>73</td><td>I</td><td>Uppercase I</td></tr><tr><td>74</td><td>J</td><td>Uppercase J</td></tr><tr><td>75</td><td>K</td><td>Uppercase K</td></tr><tr><td>76</td><td>L</td><td>Uppercase L</td></tr><tr><td>77</td><td>M</td><td>Uppercase M</td></tr><tr><td>78</td><td>N</td><td>Uppercase N</td></tr><tr><td>79</td><td>O</td><td>Uppercase O</td></tr><tr><td>80</td><td>P</td><td>Uppercase P</td></tr><tr><td>81</td><td>Q</td><td>Uppercase Q</td></tr><tr><td>82</td><td>R</td><td>Uppercase R</td></tr><tr><td>83</td><td>S</td><td>Uppercase S</td></tr><tr><td>84</td><td>T</td><td>Uppercase T</td></tr><tr><td>85</td><td>U</td><td>Uppercase U</td></tr><tr><td>86</td><td>V</td><td>Uppercase V</td></tr><tr><td>87</td><td>W</td><td>Uppercase W</td></tr><tr><td>88</td><td>X</td><td>Uppercase X</td></tr><tr><td>89</td><td>Y</td><td>Uppercase Y</td></tr><tr><td>90</td><td>Z</td><td>Uppercase Z</td></tr><tr><td>91</td><td>[</td><td>Opening (square) bracket</td></tr><tr><td>92</td><td> </td><td>Backslash</td></tr><tr><td>93</td><td>]</td><td>Closing (square) bracket</td></tr><tr><td>94</td><td>^</td><td>Caret - circumflex</td></tr><tr><td>95</td><td>_</td><td>Underscore</td></tr><tr><td>96</td><td>`</td><td>Grave accent</td></tr><tr><td>97</td><td>a</td><td>Lowercase a</td></tr><tr><td>98</td><td>b</td><td>Lowercase b</td></tr><tr><td>99</td><td>c</td><td>Lowercase c</td></tr><tr><td>100</td><td>d</td><td>Lowercase d</td></tr><tr><td>101</td><td>e</td><td>Lowercase e</td></tr><tr><td>102</td><td>f</td><td>Lowercase f</td></tr><tr><td>103</td><td>g</td><td>Lowercase g</td></tr><tr><td>104</td><td>h</td><td>Lowercase h</td></tr><tr><td>105</td><td>i</td><td>Lowercase i</td></tr><tr><td>106</td><td>j</td><td>Lowercase j</td></tr><tr><td>107</td><td>k</td><td>Lowercase k</td></tr><tr><td>108</td><td>l</td><td>Lowercase l</td></tr><tr><td>109</td><td>m</td><td>Lowercase m</td></tr><tr><td>110</td><td>n</td><td>Lowercase n</td></tr><tr><td>111</td><td>o</td><td>Lowercase o</td></tr><tr><td>112</td><td>p</td><td>Lowercase p</td></tr><tr><td>113</td><td>q</td><td>Lowercase q</td></tr><tr><td>114</td><td>r</td><td>Lowercase r</td></tr><tr><td>115</td><td>s</td><td>Lowercase s</td></tr><tr><td>116</td><td>t</td><td>Lowercase t</td></tr><tr><td>117</td><td>u</td><td>Lowercase u</td></tr><tr><td>118</td><td>v</td><td>Lowercase v</td></tr><tr><td>119</td><td>w</td><td>Lowercase w</td></tr><tr><td>120</td><td>x</td><td>Lowercase x</td></tr><tr><td>121</td><td>y</td><td>Lowercase y</td></tr><tr><td>122</td><td>z</td><td>Lowercase z</td></tr><tr><td>123</td><td>{</td><td>Opening brace</td></tr><tr><td>124</td><td>|</td><td>Vertical bar</td></tr><tr><td>125</td><td>}</td><td>Closing brace</td></tr><tr><td>126</td><td>~</td><td>Equivalency sign - tilde</td></tr><tr><td>127</td><td> </td><td>Delete</td></tr><tr><td>128</td><td>€</td><td>Euro sign</td></tr><tr><td>128</td><td>€</td><td>Euro sign</td></tr><tr><td>129</td><td> </td><td> </td></tr><tr><td>130</td><td>‚</td><td>Single low-9 quotation mark</td></tr><tr><td>131</td><td>ƒ</td><td>Latin small letter f with hook</td></tr><tr><td>132</td><td>„</td><td>Double low-9 quotation mark</td></tr><tr><td>133</td><td>…</td><td>Horizontal ellipsis</td></tr><tr><td>134</td><td>†</td><td>Dagger</td></tr><tr><td>135</td><td>‡</td><td>Double dagger</td></tr><tr><td>136</td><td>ˆ</td><td>Modifier letter circumflex accent</td></tr><tr><td>137</td><td>‰</td><td>Per mille sign</td></tr><tr><td>138</td><td>Š</td><td>Latin capital letter S with caron</td></tr><tr><td>139</td><td>‹</td><td>Single left-pointing angle quotation</td></tr><tr><td>140</td><td>Œ</td><td>Latin capital ligature OE</td></tr><tr><td>141</td><td> </td><td> </td></tr><tr><td>142</td><td>Ž</td><td>Latin capital letter Z with caron</td></tr><tr><td>143</td><td> </td><td> </td></tr><tr><td>144</td><td> </td><td> </td></tr><tr><td>145</td><td>‘</td><td>Left single quotation mark</td></tr><tr><td>146</td><td>’</td><td>Right single quotation mark</td></tr><tr><td>147</td><td>“</td><td>Left double quotation mark</td></tr><tr><td>148</td><td>”</td><td>Right double quotation mark</td></tr><tr><td>149</td><td>•</td><td>Bullet</td></tr><tr><td>150</td><td>–</td><td>En dash</td></tr><tr><td>151</td><td>—</td><td>Em dash</td></tr><tr><td>152</td><td>˜</td><td>Small tilde</td></tr><tr><td>153</td><td>™</td><td>Trade mark sign</td></tr><tr><td>154</td><td>š</td><td>Latin small letter S with caron</td></tr><tr><td>155</td><td>›</td><td>Single right-pointing angle quotation mark</td></tr><tr><td>156</td><td>œ</td><td>Latin small ligature oe</td></tr><tr><td>157</td><td> </td><td> </td></tr><tr><td>158</td><td>ž</td><td>Latin small letter z with caron</td></tr><tr><td>159</td><td>Ÿ</td><td>Latin capital letter Y with diaeresis</td></tr><tr><td>160</td><td> </td><td>Non-breaking space</td></tr><tr><td>161</td><td>¡</td><td>Inverted exclamation mark</td></tr><tr><td>162</td><td>¢</td><td>Cent sign</td></tr><tr><td>163</td><td>£</td><td>Pound sign</td></tr><tr><td>164</td><td>¤</td><td>Currency sign</td></tr><tr><td>165</td><td>¥</td><td>Yen sign</td></tr><tr><td>166</td><td>¦</td><td>Pipe, Broken vertical bar</td></tr><tr><td>167</td><td>§</td><td>Section sign</td></tr><tr><td>168</td><td>¨</td><td>Spacing diaeresis - umlaut</td></tr><tr><td>169</td><td>©</td><td>Copyright sign</td></tr><tr><td>170</td><td>ª</td><td>Feminine ordinal indicator</td></tr><tr><td>171</td><td>«</td><td>Left double angle quotes</td></tr><tr><td>172</td><td>¬</td><td>Not sign</td></tr><tr><td>173</td><td>­</td><td>Soft hyphen</td></tr><tr><td>174</td><td>®</td><td>Registered trade mark sign</td></tr><tr><td>175</td><td>¯</td><td>Spacing macron - overline</td></tr><tr><td>176</td><td>°</td><td>Degree sign</td></tr><tr><td>177</td><td>±</td><td>Plus-or-minus sign</td></tr><tr><td>178</td><td>²</td><td>Superscript two - squared</td></tr><tr><td>179</td><td>³</td><td>Superscript three - cubed</td></tr><tr><td>180</td><td>´</td><td>Acute accent - spacing acute</td></tr><tr><td>181</td><td>µ</td><td>Micro sign</td></tr><tr><td>182</td><td>¶</td><td>Pilcrow sign - paragraph sign</td></tr><tr><td>183</td><td>·</td><td>Middle dot - Georgian comma</td></tr><tr><td>184</td><td>¸</td><td>Spacing cedilla</td></tr><tr><td>185</td><td>¹</td><td>Superscript one</td></tr><tr><td>186</td><td>º</td><td>Masculine ordinal indicator</td></tr><tr><td>187</td><td>»</td><td>Right double angle quotes</td></tr><tr><td>188</td><td>¼</td><td>Fraction one quarter</td></tr><tr><td>189</td><td>½</td><td>Fraction one half</td></tr><tr><td>190</td><td>¾</td><td>Fraction three quarters</td></tr><tr><td>191</td><td>¿</td><td>Inverted question mark</td></tr><tr><td>192</td><td>À</td><td>Latin capital letter A with grave</td></tr><tr><td>193</td><td>Á</td><td>Latin capital letter A with acute</td></tr><tr><td>194</td><td>Â</td><td>Latin capital letter A with circumflex</td></tr><tr><td>195</td><td>Ã</td><td>Latin capital letter A with tilde</td></tr><tr><td>196</td><td>Ä</td><td>Latin capital letter A with diaeresis</td></tr><tr><td>197</td><td>Å</td><td>Latin capital letter A with ring above</td></tr><tr><td>198</td><td>Æ</td><td>Latin capital letter AE</td></tr><tr><td>199</td><td>Ç</td><td>Latin capital letter C with cedilla</td></tr><tr><td>200</td><td>È</td><td>Latin capital letter E with grave</td></tr><tr><td>201</td><td>É</td><td>Latin capital letter E with acute</td></tr><tr><td>202</td><td>Ê</td><td>Latin capital letter E with circumflex</td></tr><tr><td>203</td><td>Ë</td><td>Latin capital letter E with diaeresis</td></tr><tr><td>204</td><td>Ì</td><td>Latin capital letter I with grave</td></tr><tr><td>205</td><td>Í</td><td>Latin capital letter I with acute</td></tr><tr><td>206</td><td>Î</td><td>Latin capital letter I with circumflex</td></tr><tr><td>207</td><td>Ï</td><td>Latin capital letter I with diaeresis</td></tr><tr><td>208</td><td>Ð</td><td>Latin capital letter ETH</td></tr><tr><td>209</td><td>Ñ</td><td>Latin capital letter N with tilde</td></tr><tr><td>210</td><td>Ò</td><td>Latin capital letter O with grave</td></tr><tr><td>211</td><td>Ó</td><td>Latin capital letter O with acute</td></tr><tr><td>212</td><td>Ô</td><td>Latin capital letter O with circumflex</td></tr><tr><td>213</td><td>Õ</td><td>Latin capital letter O with tilde</td></tr><tr><td>214</td><td>Ö</td><td>Latin capital letter O with diaeresis</td></tr><tr><td>215</td><td>×</td><td>Multiplication sign</td></tr><tr><td>216</td><td>Ø</td><td>Latin capital letter O with slash</td></tr><tr><td>217</td><td>Ù</td><td>Latin capital letter U with grave</td></tr><tr><td>218</td><td>Ú</td><td>Latin capital letter U with acute</td></tr><tr><td>219</td><td>Û</td><td>Latin capital letter U with circumflex</td></tr><tr><td>220</td><td>Ü</td><td>Latin capital letter U with diaeresis</td></tr><tr><td>221</td><td>Ý</td><td>Latin capital letter Y with acute</td></tr><tr><td>222</td><td>Þ</td><td>Latin capital letter THORN</td></tr><tr><td>223</td><td>ß</td><td>Latin small letter sharp s - ess-zed</td></tr><tr><td>224</td><td>à</td><td>Latin small letter a with grave</td></tr><tr><td>225</td><td>á</td><td>Latin small letter a with acute</td></tr><tr><td>226</td><td>â</td><td>Latin small letter a with circumflex</td></tr><tr><td>227</td><td>ã</td><td>Latin small letter a with tilde</td></tr><tr><td>228</td><td>ä</td><td>Latin small letter a with diaeresis</td></tr><tr><td>229</td><td>å</td><td>Latin small letter a with ring above</td></tr><tr><td>230</td><td>æ</td><td>Latin small letter ae</td></tr><tr><td>231</td><td>ç</td><td>Latin small letter c with cedilla</td></tr><tr><td>232</td><td>è</td><td>Latin small letter e with grave</td></tr><tr><td>233</td><td>é</td><td>Latin small letter e with acute</td></tr><tr><td>234</td><td>ê</td><td>Latin small letter e with circumflex</td></tr><tr><td>235</td><td>ë</td><td>Latin small letter e with diaeresis</td></tr><tr><td>236</td><td>ì</td><td>Latin small letter i with grave</td></tr><tr><td>237</td><td>í</td><td>Latin small letter i with acute</td></tr><tr><td>238</td><td>î</td><td>Latin small letter i with circumflex</td></tr><tr><td>239</td><td>ï</td><td>Latin small letter i with diaeresis</td></tr><tr><td>240</td><td>ð</td><td>Latin small letter eth</td></tr><tr><td>241</td><td>ñ</td><td>Latin small letter n with tilde</td></tr><tr><td>242</td><td>ò</td><td>Latin small letter o with grave</td></tr><tr><td>243</td><td>ó</td><td>Latin small letter o with acute</td></tr><tr><td>244</td><td>ô</td><td>Latin small letter o with circumflex</td></tr><tr><td>245</td><td>õ</td><td>Latin small letter o with tilde</td></tr><tr><td>246</td><td>ö</td><td>Latin small letter o with diaeresis</td></tr><tr><td>247</td><td>÷</td><td>Division sign</td></tr><tr><td>248</td><td>ø</td><td>Latin small letter o with slash</td></tr><tr><td>249</td><td>ù</td><td>Latin small letter u with grave</td></tr><tr><td>250</td><td>ú</td><td>Latin small letter u with acute</td></tr><tr><td>251</td><td>û</td><td>Latin small letter u with circumflex</td></tr><tr><td>252</td><td>ü</td><td>Latin small letter u with diaeresis</td></tr><tr><td>253</td><td>ý</td><td>Latin small letter y with acute</td></tr><tr><td>254</td><td>þ</td><td>Latin small letter thorn</td></tr><tr><td>255</td><td>ÿ</td><td>Latin small letter y with diaeresis</td></tr></tbody></table></div>
+<script type="text/javascript" src="js/interpreter.js"></script>
+<script type="text/javascript" src="js/views.js"></script>
+<script type="text/javascript" src="js/models.js"></script>
+<script type="text/javascript" src="js/autoresize.js"></script>
+<script type="text/javascript" src="js/storage.js"></script>
+<script type="text/javascript" src="js/minify.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            /*if(bits > 13){
+                var divid = 28;
+            }else{
+                var divid = 32;
+            }*/
+            var cells = _(window.innerWidth / 32|0).times($.noop);
+            var tape = new Tape(cells);
+            var pointer = new Pointer();
+            new InterpreterView({
+                editor: $("#source"),
+                tape: tape,
+                pointer: pointer
+            }).render();
+  var x = document.getElementsByClassName('tape')[0];
+  var y = document.getElementsByClassName("cell");
+  var i;
+  /*if(bits > 13){
+    for (i = 0; i < y.length; i++) {
+        y[i].style.width = '44px';
+    }
+  }else if(bits > 9){
+    for(i = 0; i < y.length; i++){
+        y[i].style.width = '35px';
+    }
+  }*/
+  $('#source').autoResize();
+        $('#preview').autoResize();
+        navigator.permissions.query({name: "clipboard-write"})
+        });
+    </script>
+</body>
+</html>
