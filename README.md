@@ -19,7 +19,7 @@ More information:
 
 ### Contributors
 
-- ([FourCinnamon](http://github.com/fourcinnamon0))
+- [FourCinnamon](http://github.com/fourcinnamon0)
 - Fatih Erikli ([fatiherikli](http://github.com/fatiherikli))
 - Henry Heikkinen ([rce](https://github.com/rce))
 - Gabriele Cirulli ([gabrielecirulli](https://github.com/gabrielecirulli))
