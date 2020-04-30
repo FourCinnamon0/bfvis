@@ -1,3 +1,4 @@
+This is supposed to be a fork of <https://github.com/fatiherikli/brainfuck-visualizer/>.
 ### Brainfuck Visualizer
 
 Javascript Brainfuck Interpreter + Visualizer
@@ -15,6 +16,7 @@ More information:
 
 ### Contributors
 
+- ([FourCinnamon](http://github.com/fourcinnamon0))
 - Fatih Erikli ([fatiherikli](http://github.com/fatiherikli))
 - Henry Heikkinen ([rce](https://github.com/rce))
 - Gabriele Cirulli ([gabrielecirulli](https://github.com/gabrielecirulli))
@@ -23,4 +25,4 @@ More information:
 - Eugene Sharygin ([eush77](https://github.com/eush77))
 
 ### Demo
-<http://fatiherikli.github.io/brainfuck-visualizer>
+<https://fourcinnamon0.github.io/bfvis/>
