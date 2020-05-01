@@ -20,6 +20,7 @@ More information:
 ### Contributors
 
 - [FourCinnamon](http://github.com/fourcinnamon0)
+- [Pitust](http://github.com/pitust)
 - Fatih Erikli ([fatiherikli](http://github.com/fatiherikli))
 - Henry Heikkinen ([rce](https://github.com/rce))
 - Gabriele Cirulli ([gabrielecirulli](https://github.com/gabrielecirulli))
