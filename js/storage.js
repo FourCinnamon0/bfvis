@@ -15,7 +15,7 @@ function updatebitshow(){
     }else{
       uns.classList.remove('hidden')
     }
-    var x = document.getElementsByClassName('tape')[0];
+    var x = document.getElementsByClassName('pointer')[0];
     var y = document.getElementsByClassName("cell");
     var i;
       if(bits > 13){
@@ -28,18 +28,6 @@ function updatebitshow(){
       }
     }
   }
-  var x = document.getElementsByClassName('tape')[0];
-    var y = document.getElementsByClassName("cell");
-    var i;
-      if(bits > 13){
-      for (i = 0; i < y.length; i++) {
-          y[i].style.width = '44px';
-      }
-    }else if(bits > 9){
-      for(i = 0; i < y.length; i++){
-          y[i].style.width = '35px';
-      }
-    }
   var bitsin = document.getElementById('bits');
   bitsin.value = localStorage.getItem("bits");
   var bits = localStorage.getItem("bits");
