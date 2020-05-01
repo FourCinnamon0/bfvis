@@ -1,67 +1,55 @@
-var Interpreter = function (source, tape, pointer,
-		out, awaitInput, instruction) {
-	/*
-	 * Brainfuck Interpreter Class
-	 * @source: Brainfuck script
-	 * @tape: Tape model
-	 * @pointer: Pointer model
-	 * @out: Output callback
-	 * @awaitInput: Input callback
-	 *
-	 * Usage:
-	 *
-	 *		var interpreter = new Interpreter(">", tape, pointer);
-	 *		interpreter.next()
-	 *		pointer.get("index") // 1
-	 *
-	 * */
-	var tokens = "<>+-.,[]!";
-	var jumps = [], action = 0;
-
-	//for ! operator
-	var inputBuffer = new function() {
-		this.buffer = "";
-		this.initialized = false;
-		this.hasInput = function () {
-			if (this.initialized == false) {
-				this.init();
-			}
-			return (this.buffer.length > 0);
-		};
-		this.init = function() {
-			for(var i = 0, pipe = false; i < source.length; i++) {
-				if (pipe) {
-					this.buffer += source[i];
-				}
-
-				if (source[i] == '!') {
-					pipe = true;
-				}	
-			}
-			this.initialized = true;			
-		};
-		this.getNext = function() {
-			var c = this.buffer.charCodeAt(0);
-			this.buffer = this.buffer.substring(1);
-			return c;
-		};
+class InputBuffer {
+	initialized = false;
+	buffer = '';
+	hasInput() {
+		if (!this.initialized) {
+			this.init();
+		}
+		return (this.buffer.length > 0);
 	}
+	init() {
+		for (var i = 0, pipe = false; i < source.length; i++) {
+			if (pipe) {
+				this.buffer += source[i];
+			}
 
-	function getIbHasInput() {
-		alert("yes!");
-	}
-
-
-	var error = function (message) {
-		return {
-			"name": "Error",
-			"message": message
-		};
+			if (source[i] == '!') {
+				pipe = true;
+			}
+		}
+		this.initialized = true;
 	};
-
-	this.checkSyntax = function () {
+	getNext() {
+		var c = this.buffer.charCodeAt(0);
+		this.buffer = this.buffer.substring(1);
+		return c;
+	};
+}
+class Interpreter {
+	inputBuffer = new InputBuffer();
+	tokens = "<>+-.,[]!";
+	jumps = [];
+	instrPtr = 0;
+	/**
+	 * 
+	 * @param {string} source 
+	 * @param {*} tape 
+	 * @param {*} pointer 
+	 * @param {(char: string) => void} out 
+	 * @param {*} awaitInput 
+	 * @param {*} instruction 
+	 */
+	constructor(source, tape, pointer, out, awaitInput, instruction) {
+		this.source = source;
+		this.tape = tape;
+		this.pointer = pointer;
+		this.out = out;
+		this.awaitInput = awaitInput;
+		this.instruction = instruction;
+	}
+	checkSyntax() {
 		var d = 0, i = 0, token = "";
-		while (i !== source.length) {
+		while (i < this.source.length) {
 			token = source[i++];
 
 			if (token === "[") d++;
@@ -69,103 +57,103 @@ var Interpreter = function (source, tape, pointer,
 
 			if (d < 0) break;
 		}
-		if (d > 0) throw error("SyntaxError: Missing parenthesis \"]\"");
-		else if (d < 0) throw error("SyntaxError: Wrong parenthesis \"]\"");
-	};
-
-	this.next = function (optimize) {
-		if (action >= source.length) {
-			if (jumps.length === 0) throw {
+		if (d > 0) throw new Error("SyntaxError: Missing parenthesis \"]\"");
+		else if (d < 0) throw new Error("SyntaxError: Wrong parenthesis \"]\"");
+	}
+	next(optimize) {
+		if (this.instrPtr >= this.source.length) {
+			if (this.jumps.length === 0) throw {
 				"name": "End",
 				"message": "End of BF script."
 			};
 			else {
-				throw error("Mismatched parentheses.");
+				throw new Error("Mismatched parentheses.");
 			}
 		}
 
 		// Skip non-code characters
-		if (tokens.indexOf(source[action]) === -1) {
-			action++;
+		if (this.tokens.indexOf(this.source[this.instrPtr]) === -1) {
+			this.instrPtr++;
 			return this.next(optimize);
 		}
-		var index = pointer.get("index");
-		if (index < 0 || index >= tape.models.length) {
-			throw error("Memory error: " + index);																		//rollover pointer todo
+		let ramPtr = this.pointer.get("index");
+		if (ramPtr < 0 || ramPtr >= this.tape.models.length) {
+			throw new Error("Memory error: " + ramPtr);			//TODO: rollover pointer
 		}
-		instruction(action);
-		var token = source[action];
-		var cell = tape.models[index];
+		this.instruction(this.instrPtr);
+		let token =  this.source[this.instrPtr];
+		let cell = this.tape.models[ramPtr];
+		let lookahead;
 		switch (token) {
 			case "<":
 				lookahead = 1;
-				while(optimize&&source[action+lookahead]==="<"){
+				while (optimize && source[this.instrPtr + lookahead] === "<") {
 					lookahead++;
 				}
-				action += lookahead - 1;
-				pointer.left(lookahead);
+				this.instrPtr += lookahead - 1;
+				this.pointer.left(lookahead);
 				break;
 
 			case ">":
 				lookahead = 1;
-				while(optimize&&source[action+lookahead]===">"){
+				while (optimize && source[this.instrPtr + lookahead] === ">") {
 					lookahead++;
 				}
-				action += lookahead - 1;
-				pointer.right(lookahead);
+				this.instrPtr += lookahead - 1;
+				this.pointer.right(lookahead);
 				break;
 
 			case "-":
 				lookahead = 1;
-				while(optimize&&source[action+lookahead]==="-"){
+				while (optimize && source[this.instrPtr + lookahead] === "-") {
 					lookahead++;
 				}
-				action += lookahead - 1;
+				this.instrPtr += lookahead - 1;
 				cell.dec(lookahead);
 				break;
 
 			case "+":
 				lookahead = 1;
-				while(optimize&&source[action+lookahead]==="+"){
+				while (optimize && source[this.instrPtr + lookahead] === "+") {
 					lookahead++;
 				}
-				action += lookahead - 1;
+				this.instrPtr += lookahead - 1;
 				cell.inc(lookahead);
 				break;
 
 			case ",":
 				if ($('#exclaim').is(':checked')) {																//optimise
 					if (inputBuffer.hasInput()) {
-						cell.set("value",inputBuffer.getNext());
+						cell.set("value", inputBuffer.getNext());
 					} else {
-						cell.set("value",0);
+						this.awaitInput(cell);
 					}
 				} else {
-					awaitInput(cell);
+					this.awaitInput(cell);
 				}
 				break;
 
 			case ".":
-				out(cell);																						//optimise
+				this.out(cell);																						//optimise
 				break;
 
 			case "[":
-				if(optimize&&source[action+1]==="-"&&source[action+2]==="]"){
-					cell.set("value",0);
+				if (optimize && source[this.instrPtr + 1] === "-" && source[this.instrPtr + 2] === "]") {
+					cell.set("value", 0);
 				}
 				if (cell.get("value") != 0) {
-					jumps.push(action);
+					this.jumps.push(this.instrPtr);
 				} else {
 					var loops = 1;
 					while (loops > 0) {
-						action++;
-						if (action >= source.length) {
+						this.instrPtr++;
+						if (this.instrPtr >= source.length) {
 							throw error("Mismatched parentheses.");
 						}
 
-						if (source[action] === "]") {
+						if (source[this.instrPtr] === "]") {
 							loops--;
-						} else if (source[action] === "[") {
+						} else if (source[this.instrPtr] === "[") {
 							loops++;
 						}
 					}
@@ -173,20 +161,20 @@ var Interpreter = function (source, tape, pointer,
 				break;
 
 			case "]":
-				if (jumps.length === 0) {
+				if (this.jumps.length === 0) {
 					throw error("Mismatched parentheses.");
 				}
 
 				if (cell.get("value") != 0) {
-					action = jumps[jumps.length - 1];
+					this.instrPtr = this.jumps.slice(-1)[0];
 				} else {
-					jumps.pop();
+					this.jumps.pop();
 				}
 				break;
 			case "!":
-				tokens = "";
+				this.tokens = "";
 				break;
 		}
-		return action++;
+		return this.instrPtr++;
 	}
-};
+}
