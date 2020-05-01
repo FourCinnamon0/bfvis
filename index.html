@@ -151,11 +151,6 @@
 <script type="text/javascript" src="js/minify.js"></script>
     <script type="text/javascript">
         $(function () {
-            /*if(bits > 13){
-                var divid = 28;
-            }else{
-                var divid = 32;
-            }*/
             var cells = _(window.innerWidth / 32|0).times($.noop);
             var tape = new Tape(cells);
             var pointer = new Pointer();
@@ -164,18 +159,6 @@
                 tape: tape,
                 pointer: pointer
             }).render();
-  var x = document.getElementsByClassName('tape')[0];
-  var y = document.getElementsByClassName("cell");
-  var i;
-  /*if(bits > 13){
-    for (i = 0; i < y.length; i++) {
-        y[i].style.width = '44px';
-    }
-  }else if(bits > 9){
-    for(i = 0; i < y.length; i++){
-        y[i].style.width = '35px';
-    }
-  }*/
   $('#source').autoResize();
         $('#preview').autoResize();
         navigator.permissions.query({name: "clipboard-write"})
